@@ -1,4 +1,4 @@
-const clientId = "YOUR_CLIENT_ID";
+const clientId = "a727fe020d254b26a32d982d998d0126";
 const redirectUri = "https://philipp1730.github.io/SpotifyAudioPlay/";
 const scope = "user-read-playback-state user-modify-playback-state";
 let accessToken = null;
