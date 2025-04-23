@@ -6,18 +6,23 @@
   <title>SpotifyAudioPlay</title>
   <style>
     body { font-family: sans-serif; padding: 2rem; text-align: center; background: #fafafa; }
-    button { padding: 1rem 2rem; font-size: 1.2rem; cursor: pointer; }
+    button { padding: 1rem 2rem; font-size: 1.2rem; cursor: pointer; margin: 0.5rem; }
     #tokenInfo { margin-top: 2rem; color: green; }
+    #bookmarkList { margin-top: 2rem; text-align: left; max-width: 600px; margin-inline: auto; }
+    .bookmark-item { background: #fff; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
   <h1>SpotifyAudioPlay</h1>
   <p>Bookmark your audiobooks on Spotify</p>
   <button id="login">Login to Spotify</button>
+  <button id="bookmark">📍 Bookmark Position</button>
+  <button id="loadBookmarks">📚 Show Bookmarks</button>
   <div id="tokenInfo"></div>
+  <div id="bookmarkList"></div>
 
   <script>
-    const clientId = 'a727fe020d254b26a32d982d998d0126'; // TODO: Ersetze mit deiner echten Client-ID
+    const clientId = 'a727fe020d254b26a32d982d998d0126';
     const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/';
     const scopes = 'user-read-playback-state user-modify-playback-state';
 
@@ -75,11 +80,68 @@
       }
     }
 
-    // Handle redirect with code
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     if (code) {
       getAccessToken(code);
+    }
+
+    async function getCurrentPlayback() {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('https://api.spotify.com/v1/me/player', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      return res.ok ? res.json() : null;
+    }
+
+    document.getElementById('bookmark').addEventListener('click', async () => {
+      const data = await getCurrentPlayback();
+      if (!data) return alert('No playback info found.');
+
+      const bookmark = {
+        name: data.item.name,
+        artist: data.item.artists.map(a => a.name).join(', '),
+        id: data.item.id,
+        uri: data.item.uri,
+        position: data.progress_ms
+      };
+
+      let bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      bookmarks.push(bookmark);
+      localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+      alert('Bookmark saved!');
+    });
+
+    document.getElementById('loadBookmarks').addEventListener('click', () => {
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      const list = document.getElementById('bookmarkList');
+      list.innerHTML = '';
+
+      if (bookmarks.length === 0) {
+        list.innerHTML = '<p>No bookmarks yet.</p>';
+        return;
+      }
+
+      bookmarks.forEach(b => {
+        const div = document.createElement('div');
+        div.className = 'bookmark-item';
+        div.innerHTML = `
+          <strong>${b.name}</strong><br/>
+          <em>${b.artist}</em><br/>
+          <small>${(b.position / 1000 / 60).toFixed(2)} min</small><br/>
+          <button onclick="resume('${b.uri}', ${b.position})">▶ Resume</button>
+        `;
+        list.appendChild(div);
+      });
+    });
+
+    async function resume(uri, position) {
+      const token = localStorage.getItem('access_token');
+      await fetch('https://api.spotify.com/v1/me/player/play', {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uris: [uri], position_ms: position })
+      });
     }
   </script>
 </body>
