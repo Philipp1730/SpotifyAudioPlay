@@ -5,83 +5,82 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpotifyAudioPlay</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
-    button { padding: 0.5em 1em; margin: 0.5em 0; }
-    input, textarea { width: 100%; margin: 0.5em 0; padding: 0.5em; }
-    .bookmark { background: #fff; padding: 1em; margin-bottom: 1em; border-radius: 8px; }
+    body { font-family: sans-serif; padding: 2rem; text-align: center; background: #fafafa; }
+    button { padding: 1rem 2rem; font-size: 1.2rem; cursor: pointer; }
+    #tokenInfo { margin-top: 2rem; color: green; }
   </style>
 </head>
 <body>
-  <h1>SpotifyAudioPlay – Hörbuch-Lesezeichen</h1>
-  <button onclick="login()">Login mit Spotify</button>
-  <button onclick="saveBookmark()">Aktuelle Position speichern</button>
-  <h2>Gespeicherte Lesezeichen</h2>
-  <div id="bookmarks"></div>
+  <h1>SpotifyAudioPlay</h1>
+  <p>Bookmark your audiobooks on Spotify</p>
+  <button id="login">Login to Spotify</button>
+  <div id="tokenInfo"></div>
 
   <script>
-    const clientId = 'a727fe020d254b26a32d982d998d0126'; // <- Hier Client-ID einfügen
-    const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/'; // <- GitHub Pages URL hier einfügen
-    let accessToken = null;
+    const clientId = 'a727fe020d254b26a32d982d998d0126'; // TODO: Ersetze mit deiner echten Client-ID
+    const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/';
+    const scopes = 'user-read-playback-state user-modify-playback-state';
 
-    function login() {
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user-read-playback-state user-modify-playback-state`;
-      window.location.href = authUrl;
+    function generateCodeVerifier(length = 128) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
     }
 
-    function getTokenFromUrl() {
-      const hash = window.location.hash;
-      if (hash) {
-        const params = new URLSearchParams(hash.substr(1));
-        accessToken = params.get("access_token");
+    async function generateCodeChallenge(codeVerifier) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(codeVerifier);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    document.getElementById('login').addEventListener('click', async () => {
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+      localStorage.setItem('code_verifier', codeVerifier);
+
+      const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
+      window.location.href = authUrl;
+    });
+
+    async function getAccessToken(code) {
+      const codeVerifier = localStorage.getItem('code_verifier');
+      const body = new URLSearchParams({
+        client_id: clientId,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier
+      });
+
+      const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+
+      const data = await response.json();
+      if (data.access_token) {
+        localStorage.setItem('access_token', data.access_token);
+        document.getElementById('tokenInfo').textContent = 'Logged in successfully!';
+      } else {
+        document.getElementById('tokenInfo').textContent = 'Login failed. Check console.';
+        console.error(data);
       }
     }
 
-    async function saveBookmark() {
-      if (!accessToken) return alert("Bitte zuerst einloggen.");
-      const res = await fetch('https://api.spotify.com/v1/me/player', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      const data = await res.json();
-      if (!data || !data.item) return alert("Keine Wiedergabe gefunden.");
-
-      const bookmark = {
-        name: data.item.name,
-        id: data.item.uri,
-        position: data.progress_ms,
-        timestamp: new Date().toISOString()
-      };
-      const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
-      bookmarks.push(bookmark);
-      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-      renderBookmarks();
+    // Handle redirect with code
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      getAccessToken(code);
     }
-
-    async function playBookmark(bookmark) {
-      await fetch('https://api.spotify.com/v1/me/player/play', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uris: [bookmark.id],
-          position_ms: bookmark.position
-        })
-      });
-    }
-
-    function renderBookmarks() {
-      const container = document.getElementById("bookmarks");
-      container.innerHTML = "";
-      const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
-      bookmarks.forEach((b, i) => {
-        const el = document.createElement("div");
-        el.className = "bookmark";
-        el.innerHTML = `<strong>${b.name}</strong><br />Position: ${(b.position / 60000).toFixed(2)} min<br />
-          <button onclick='playBookmark(${JSON.stringify(b)})'>Fortsetzen</button>`;
-        container.appendChild(el);
-      });
-    }
-
-    getTokenFromUrl();
-    renderBookmarks();
   </script>
 </body>
 </html>
