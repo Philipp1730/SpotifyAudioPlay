@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpotifyAudioPlay</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
+    button { padding: 0.5em 1em; margin: 0.5em 0; }
+    input, textarea { width: 100%; margin: 0.5em 0; padding: 0.5em; }
+    .bookmark { background: #fff; padding: 1em; margin-bottom: 1em; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>SpotifyAudioPlay – Hörbuch-Lesezeichen</h1>
+  <button onclick="login()">Login mit Spotify</button>
+  <button onclick="saveBookmark()">Aktuelle Position speichern</button>
+  <h2>Gespeicherte Lesezeichen</h2>
+  <div id="bookmarks"></div>
+
+  <script>
+    const clientId = 'DEINE_CLIENT_ID_HIER'; // <- Hier Client-ID einfügen
+    const redirectUri = 'https://deinname.github.io/SpotifyAudioPlay/'; // <- GitHub Pages URL hier einfügen
+    let accessToken = null;
+
+    function login() {
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user-read-playback-state user-modify-playback-state`;
+      window.location.href = authUrl;
+    }
+
+    function getTokenFromUrl() {
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substr(1));
+        accessToken = params.get("access_token");
+      }
+    }
+
+    async function saveBookmark() {
+      if (!accessToken) return alert("Bitte zuerst einloggen.");
+      const res = await fetch('https://api.spotify.com/v1/me/player', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await res.json();
+      if (!data || !data.item) return alert("Keine Wiedergabe gefunden.");
+
+      const bookmark = {
+        name: data.item.name,
+        id: data.item.uri,
+        position: data.progress_ms,
+        timestamp: new Date().toISOString()
+      };
+      const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+      bookmarks.push(bookmark);
+      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+      renderBookmarks();
+    }
+
+    async function playBookmark(bookmark) {
+      await fetch('https://api.spotify.com/v1/me/player/play', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uris: [bookmark.id],
+          position_ms: bookmark.position
+        })
+      });
+    }
+
+    function renderBookmarks() {
+      const container = document.getElementById("bookmarks");
+      container.innerHTML = "";
+      const bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+      bookmarks.forEach((b, i) => {
+        const el = document.createElement("div");
+        el.className = "bookmark";
+        el.innerHTML = `<strong>${b.name}</strong><br />Position: ${(b.position / 60000).toFixed(2)} min<br />
+          <button onclick='playBookmark(${JSON.stringify(b)})'>Fortsetzen</button>`;
+        container.appendChild(el);
+      });
+    }
+
+    getTokenFromUrl();
+    renderBookmarks();
+  </script>
+</body>
+</html>
