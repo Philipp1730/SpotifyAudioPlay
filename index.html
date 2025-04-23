@@ -9,7 +9,8 @@
     button { padding: 1rem 2rem; font-size: 1.2rem; cursor: pointer; margin: 0.5rem; }
     #tokenInfo { margin-top: 2rem; color: green; }
     #bookmarkList { margin-top: 2rem; text-align: left; max-width: 600px; margin-inline: auto; }
-    .bookmark-item { background: #fff; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .bookmark-item { background: #fff; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); position: relative; }
+    .trash-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #888; }
   </style>
 </head>
 <body>
@@ -22,7 +23,7 @@
   <div id="bookmarkList"></div>
 
   <script>
-    const clientId = 'a727fe020d254b26a32d982d998d0126';
+    const clientId = 'DEINE_CLIENT_ID_HIER';
     const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/';
     const scopes = 'user-read-playback-state user-modify-playback-state';
 
@@ -102,17 +103,23 @@
         name: data.item.name,
         artist: data.item.artists.map(a => a.name).join(', '),
         id: data.item.id,
+        context_uri: data.context?.uri || null,
         uri: data.item.uri,
         position: data.progress_ms
       };
 
       let bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      bookmarks = bookmarks.filter(b => b.context_uri !== bookmark.context_uri);
       bookmarks.push(bookmark);
       localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
       alert('Bookmark saved!');
     });
 
     document.getElementById('loadBookmarks').addEventListener('click', () => {
+      renderBookmarks();
+    });
+
+    function renderBookmarks() {
       const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
       const list = document.getElementById('bookmarkList');
       list.innerHTML = '';
@@ -122,25 +129,47 @@
         return;
       }
 
-      bookmarks.forEach(b => {
-        const div = document.createElement('div');
-        div.className = 'bookmark-item';
-        div.innerHTML = `
-          <strong>${b.name}</strong><br/>
-          <em>${b.artist}</em><br/>
-          <small>${(b.position / 1000 / 60).toFixed(2)} min</small><br/>
-          <button onclick="resume('${b.uri}', ${b.position})">▶ Resume</button>
-        `;
-        list.appendChild(div);
-      });
-    });
+      // Gruppieren nach Hörbuch/Album (context_uri)
+      const grouped = {};
+      for (const b of bookmarks) {
+        if (!grouped[b.context_uri]) grouped[b.context_uri] = [];
+        grouped[b.context_uri].push(b);
+      }
 
-    async function resume(uri, position) {
+      for (const contextUri in grouped) {
+        const group = grouped[contextUri];
+        group.forEach((b, i) => {
+          const div = document.createElement('div');
+          div.className = 'bookmark-item';
+          div.innerHTML = `
+            <strong>${b.name}</strong><br/>
+            <em>${b.artist}</em><br/>
+            <small>${(b.position / 1000 / 60).toFixed(2)} min</small><br/>
+            <button onclick="resume('${b.context_uri}', '${b.uri}', ${b.position})">▶ Resume</button>
+            <button class="trash-btn" onclick="deleteBookmark('${b.uri}')">🗑️</button>
+          `;
+          list.appendChild(div);
+        });
+      }
+    }
+
+    function deleteBookmark(uri) {
+      let bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      bookmarks = bookmarks.filter(b => b.uri !== uri);
+      localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+      renderBookmarks();
+    }
+
+    async function resume(context_uri, track_uri, position) {
       const token = localStorage.getItem('access_token');
+      const body = context_uri
+        ? { context_uri, offset: { uri: track_uri }, position_ms: position }
+        : { uris: [track_uri], position_ms: position };
+
       await fetch('https://api.spotify.com/v1/me/player/play', {
         method: 'PUT',
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uris: [uri], position_ms: position })
+        body: JSON.stringify(body)
       });
     }
   </script>
