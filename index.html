@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,21 +7,26 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app">
-    <header>
-      <h1>SpotifyAudioPlay</h1>
-    </header>
-    <main>
-      <button id="login-button">Login with Spotify</button>
-      <button id="load-button">Load Bookmarks</button>
-      <div id="player-controls">
-        <button id="play-button">▶️</button>
-        <button id="pause-button">⏸️</button>
-        <button id="bookmark-button">🔖</button>
-      </div>
-      <ul id="bookmarks"></ul>
-    </main>
-  </div>
+  <header>
+    <h1>SpotifyAudioPlay</h1>
+    <p>Setze Lesezeichen für deine Spotify-Hörbücher 🎧</p>
+  </header>
+
+  <main>
+    <button id="login-button">Login with Spotify</button>
+    <div id="controls" class="hidden">
+      <button id="pause-button">⏸️ Pause</button>
+      <button id="bookmark-button">🔖 Bookmark setzen</button>
+      <button id="load-bookmarks">📚 Bookmarks anzeigen</button>
+    </div>
+
+    <section id="bookmarks"></section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 SpotifyAudioPlay – GitHub Pages App</p>
+  </footer>
+
   <script src="script.js"></script>
 </body>
 </html>
