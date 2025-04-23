@@ -1,58 +1,71 @@
+/* Spotify-inspiriertes Design */
+
 body {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  background-color: #121212;
-  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen;
+  background-color: #191414;
+  color: #fff;
   margin: 0;
   padding: 0;
+  text-align: center;
 }
 
-#app {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 1rem;
-  background-color: #1e1e1e;
-  border-radius: 8px;
+header {
+  background-color: #1db954;
+  padding: 2rem 1rem;
+  color: white;
 }
 
 header h1 {
-  color: #1db954;
-  text-align: center;
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+main {
+  padding: 2rem;
 }
 
 button {
   background-color: #1db954;
-  color: white;
   border: none;
-  padding: 0.5rem 1rem;
+  color: white;
+  padding: 0.75rem 1.25rem;
   margin: 0.5rem;
-  border-radius: 20px;
+  font-size: 1rem;
+  border-radius: 2rem;
   cursor: pointer;
+  transition: background 0.3s;
 }
 
-#player-controls {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
+button:hover {
+  background-color: #1ed760;
 }
 
-ul#bookmarks {
-  list-style: none;
-  padding: 0;
-}
-
-ul#bookmarks li {
-  background: #282828;
-  margin: 0.5rem 0;
-  padding: 0.5rem;
-  border-radius: 8px;
+#bookmarks div {
+  background-color: #282828;
+  margin: 1rem auto;
+  padding: 1rem;
+  max-width: 400px;
+  border-radius: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-ul#bookmarks li button {
-  background-color: red;
-  border-radius: 50%;
-  padding: 0.3rem;
-  margin-left: 1rem;
+#bookmarks button {
+  background-color: transparent;
+  color: #1db954;
+  border: none;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+footer {
+  background-color: #121212;
+  color: #777;
+  padding: 1rem;
+  margin-top: 2rem;
+}
+
+.hidden {
+  display: none;
 }
