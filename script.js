@@ -1,77 +1,131 @@
-const clientId = "a727fe020d254b26a32d982d998d0126";
+// --- Spotify OAuth + PKCE ---
+const clientId = "a727fe020d254b26a32d982d998d0126"; // Ersetze das mit deiner Client-ID
 const redirectUri = "https://philipp1730.github.io/SpotifyAudioPlay/";
-const scope = "user-read-playback-state user-modify-playback-state";
-let accessToken = null;
 
-async function generateCodeVerifier() {
-  const array = new Uint8Array(64);
-  window.crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
+let codeVerifier;
+let accessToken = localStorage.getItem("access_token");
 
-async function generateCodeChallenge(codeVerifier) {
-  const data = new TextEncoder().encode(codeVerifier);
-  const digest = await window.crypto.subtle.digest("SHA-256", data);
-  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-async function login() {
-  const verifier = await generateCodeVerifier();
-  const challenge = await generateCodeChallenge(verifier);
-  localStorage.setItem("code_verifier", verifier);
-  const args = new URLSearchParams({
-    client_id: clientId,
-    response_type: "code",
-    redirect_uri: redirectUri,
-    code_challenge_method: "S256",
-    code_challenge: challenge,
-    scope: scope
+document.addEventListener("DOMContentLoaded", () => {
+  // Login Button
+  document.getElementById("login-button").addEventListener("click", () => {
+    generateCodeVerifier().then(verifier => {
+      codeVerifier = verifier;
+      const challenge = generateCodeChallenge(codeVerifier);
+      localStorage.setItem("code_verifier", codeVerifier);
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user-read-playback-state user-modify-playback-state&code_challenge_method=S256&code_challenge=${challenge}`;
+      window.location.href = authUrl;
+    });
   });
-  window.location = `https://accounts.spotify.com/authorize?${args}`;
+
+  // Nach Redirect Zugriffstoken holen
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get("code");
+  if (code && !accessToken) {
+    fetchAccessToken(code).then(() => {
+      window.history.replaceState({}, document.title, "/SpotifyAudioPlay/");
+    });
+  }
+
+  // Weitere Buttons
+  document.getElementById("pause-button")?.addEventListener("click", pause);
+  document.getElementById("bookmark-button")?.addEventListener("click", setBookmark);
+  document.getElementById("load-bookmarks")?.addEventListener("click", loadBookmarks);
+});
+
+// --- Auth Helper ---
+function generateCodeVerifier() {
+  const array = new Uint32Array(56);
+  window.crypto.getRandomValues(array);
+  return Promise.resolve(btoa(Array.from(array).map(val => val % 36).join("")).slice(0, 128));
+}
+
+function generateCodeChallenge(codeVerifier) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(codeVerifier);
+  return window.crypto.subtle.digest("SHA-256", data).then(buffer => {
+    const hashArray = Array.from(new Uint8Array(buffer));
+    const base64 = btoa(String.fromCharCode(...hashArray));
+    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  });
 }
 
 async function fetchAccessToken(code) {
   const verifier = localStorage.getItem("code_verifier");
-  const response = await fetch("https://accounts.spotify.com/api/token", {
+
+  const params = new URLSearchParams();
+  params.append("client_id", clientId);
+  params.append("grant_type", "authorization_code");
+  params.append("code", code);
+  params.append("redirect_uri", redirectUri);
+  params.append("code_verifier", verifier);
+
+  const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: new URLSearchParams({
-      client_id: clientId,
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: redirectUri,
-      code_verifier: verifier
-    })
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params,
   });
-  const data = await response.json();
+
+  const data = await res.json();
   accessToken = data.access_token;
   localStorage.setItem("access_token", accessToken);
 }
 
-function play(uri, positionMs) {
-  fetch("https://api.spotify.com/v1/me/player/play", {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      context_uri: uri,
-      position_ms: positionMs
-    })
-  });
-}
-
+// --- Spotify API Steuerung ---
 function pause() {
   fetch("https://api.spotify.com/v1/me/player/pause", {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).catch(console.error);
 }
 
-document.getElementById("login-button").addEventListener("click", login);
-document.getElementById("pause-button").addEventListener("click", pause);
+function play(uri, position_ms = 0) {
+  fetch("https://api.spotify.com/v1/me/player/play", {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ context_uri: uri, position_ms }),
+  }).catch(console.error);
+}
+
+// --- Bookmarks ---
+function setBookmark() {
+  fetch("https://api.spotify.com/v1/me/player", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.context && data.item) {
+        const bookmark = {
+          uri: data.context.uri,
+          position: data.progress_ms,
+          title: data.item.name,
+        };
+        localStorage.setItem("bookmark_" + data.context.uri, JSON.stringify(bookmark));
+        alert("Bookmark gesetzt: " + bookmark.title);
+      }
+    })
+    .catch(console.error);
+}
+
+function loadBookmarks() {
+  const container = document.getElementById("bookmarks");
+  container.innerHTML = "";
+  for (const key in localStorage) {
+    if (key.startsWith("bookmark_")) {
+      const bm = JSON.parse(localStorage.getItem(key));
+      const div = document.createElement("div");
+      div.textContent = bm.title;
+      const playBtn = document.createElement("button");
+      playBtn.textContent = "Fortsetzen";
+      playBtn.onclick = () => play(bm.uri, bm.position);
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "🗑️";
+      delBtn.onclick = () => {
+        localStorage.removeItem(key);
+        loadBookmarks();
+      };
+      div.appendChild(playBtn);
+      div.appendChild(delBtn);
+      container.appendChild(div);
+    }
+  }
+}
