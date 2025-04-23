@@ -19,8 +19,18 @@
       min-height: 100vh;
       padding: 2rem;
     }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    header img {
+      height: 48px;
+    }
     h1 {
       color: #1DB954;
+      font-size: 2rem;
     }
     button {
       background-color: #1DB954;
@@ -34,14 +44,17 @@
       border-radius: 25px;
       cursor: pointer;
       margin: 10px;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, transform 0.2s ease;
     }
     button:hover {
       background-color: #1ed760;
+      transform: scale(1.05);
     }
     ul {
       list-style-type: none;
       padding: 0;
+      width: 100%;
+      max-width: 600px;
     }
     li {
       margin: 10px 0;
@@ -59,18 +72,38 @@
       font-size: 1.2rem;
       cursor: pointer;
       margin-left: 10px;
+      transition: color 0.2s;
     }
     .icon-button:hover {
       color: #fff;
     }
+    .loader {
+      border: 4px solid #282828;
+      border-top: 4px solid #1DB954;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+      margin: 1rem auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <h1>SpotifyAudioPlay</h1>
+  <header>
+    <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/10/Spotify_Logo_CMYK_Green.png" alt="Spotify Logo">
+    <h1>SpotifyAudioPlay</h1>
+  </header>
+
   <button id="login">Login to Spotify</button>
   <button id="saveBookmark">Save Bookmark</button>
   <button id="showBookmarks">Show Bookmarks</button>
   <button id="pause">Pause</button>
+  <div class="loader" id="loader"></div>
   <ul id="bookmarks"></ul>
 
   <script>
@@ -79,7 +112,7 @@
 
     document.getElementById('login').addEventListener('click', () => {
       const clientId = 'a727fe020d254b26a32d982d998d0126';
-      const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay';
+      const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/';
       const codeVerifier = generateRandomString(64);
       generateCodeChallenge(codeVerifier).then(codeChallenge => {
         localStorage.setItem('code_verifier', codeVerifier);
@@ -95,7 +128,7 @@
       if (!code) return;
       const codeVerifier = localStorage.getItem('code_verifier');
       const clientId = 'a727fe020d254b26a32d982d998d0126';
-      const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay';
+      const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/';
 
       const response = await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
@@ -115,10 +148,13 @@
     getAccessToken();
 
     document.getElementById('saveBookmark').addEventListener('click', async () => {
+      const loader = document.getElementById('loader');
+      loader.style.display = 'block';
       const response = await fetch('https://api.spotify.com/v1/me/player', {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
       const playback = await response.json();
+      loader.style.display = 'none';
       const { context, item, progress_ms } = playback;
       if (!context || !item) return;
       bookmarks[context.uri] = { uri: item.uri, position: progress_ms };
