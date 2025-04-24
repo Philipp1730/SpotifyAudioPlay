@@ -267,3 +267,9 @@ function startTokenRefreshTimer() {
     }
   }, 50 * 60 * 1000); // 50 minutes
 }
+
+// Set the current year dynamically in the footer
+document.addEventListener('DOMContentLoaded', () => {
+  const currentYear = new Date().getFullYear();
+  document.getElementById('current-year').textContent = currentYear;
+});
