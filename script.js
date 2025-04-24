@@ -100,17 +100,17 @@ window.loadBookmarks = function () {
     })
   });
 }*/
-window.resumeBookmark = async function (uri, progress) {
-  const albumId = uri.split(':')[2]; // Falls du die album_id nicht separat übergibst
+window.resumeBookmark = async function (track_uri, progress) {
+  // Nur über Bookmark-Keys iterieren
+  const bookmarkKey = Object.keys(localStorage)
+    .find(k => k.startsWith('bookmark-') && JSON.parse(localStorage.getItem(k)).track_uri === track_uri);
 
-  const bookmark = Object.values(localStorage)
-    .map(val => JSON.parse(val))
-    .find(b => b.track_uri === uri);
-
-  if (!bookmark) {
+  if (!bookmarkKey) {
     console.error("Kein passender Bookmark gefunden");
     return;
   }
+
+  const bookmark = JSON.parse(localStorage.getItem(bookmarkKey));
 
   const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
