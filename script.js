@@ -103,8 +103,8 @@ window.resumeBookmark = async function (uri, progress) {
 
 
 // Bookmark löschen
-window.deleteBookmark = function (album_id) {
-  localStorage.removeItem(`bookmark-${album_id}`);
+window.deleteBookmark = function (track_id) {
+  localStorage.removeItem(`bookmark-${track_id}`);
   loadBookmarks();
 }
 
