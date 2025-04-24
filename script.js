@@ -87,14 +87,26 @@ window.loadBookmarks = function () {
 }
 // Bookmark fortsetzen
 window.resumeBookmark = async function (uri, progress) {
-  await fetch(`https://api.spotify.com/v1/me/player/play`, {
+  console.log(`Versuche fortzusetzen mit URI: ${uri} und Position: ${progress}`);
+  
+  const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
-    headers: { 'Authorization': `Bearer ${accessToken}` },
+    headers: { 
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({
       context_uri: uri,
       position_ms: progress
     })
   });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('Fehler bei der Anfrage:', errorData);
+  } else {
+    console.log('Wiedergabe fortgesetzt');
+  }
 }
 
 
