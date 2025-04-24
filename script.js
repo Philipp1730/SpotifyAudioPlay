@@ -139,8 +139,29 @@ window.deleteBookmark = function (key) {
   localStorage.removeItem(key);
   loadBookmarks();
 }
+
+window.checkTokenValidity = async function () {
+  const res = await fetch('https://api.spotify.com/v1/me', {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+
+  if (!res.ok) {
+    console.error('Token ist ungültig oder abgelaufen');
+    // Hier kannst du den Token erneuern, wenn nötig
+    // Möglicherweise eine Funktion zum erneuten Authentifizieren oder ein Redirect
+    return false;
+  }
+
+  return true;
+}
+
+
 // Pause
 window.pausePlayback = async function () {
+ 
+  const isValidToken = await checkTokenValidity();
+  if (!isValidToken) return; 
+ 
   const playback = await getCurrentPlayback();
   if (!playback || !playback.item) return;
 
@@ -167,6 +188,10 @@ window.pausePlayback = async function () {
 
 // Wiedergabe fortsetzen
 window.resumePlayback = async function () {
+ 
+  const isValidToken = await checkTokenValidity();
+  if (!isValidToken) return;
+ 
   const tempBookmark = localStorage.getItem('bookmark-temp');
   if (tempBookmark) {
    
