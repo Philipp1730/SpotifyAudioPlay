@@ -1,7 +1,7 @@
 import { loginWithSpotify, fetchTokenFromRedirect } from './auth.js';
 
 let accessToken = null;
-
+ 
 // Seite initialisieren
 window.onload = async () => {
   const params = new URLSearchParams(window.location.search);
