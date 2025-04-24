@@ -1,67 +1,78 @@
-// auth.js
-
-const clientId = 'a727fe020d254b26a32d982d998d0126'; // Ersetze mit deiner Spotify Client ID
+const clientId = 'a727fe020d254b26a32d982d998d0126'; // <<< Deine echte Client ID hier einfügen
 const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/';
-const scopes = [
-  'user-read-playback-state',
-  'user-modify-playback-state',
-  'user-read-currently-playing',
-  'streaming',
-  'user-read-email',
-  'user-read-private'
-];
+const scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
 
 function generateCodeVerifier(length = 128) {
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-  return Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('');
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let text = '';
+  for (let i = 0; i < length; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
 }
 
 async function generateCodeChallenge(codeVerifier) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(codeVerifier);
+  const data = new TextEncoder().encode(codeVerifier);
   const digest = await crypto.subtle.digest('SHA-256', data);
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 export async function loginWithSpotify() {
-  const verifier = generateCodeVerifier();
-  const challenge = await generateCodeChallenge(verifier);
-  localStorage.setItem('code_verifier', verifier);
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+  localStorage.setItem('code_verifier', codeVerifier);
 
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
-    scope: scopes.join(' '),
+    scope: scope,
     redirect_uri: redirectUri,
     code_challenge_method: 'S256',
-    code_challenge: challenge
+    code_challenge: codeChallenge
   });
 
-  window.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  window.location.href = authUrl;
 }
 
 export async function fetchTokenFromRedirect() {
-  const code = new URLSearchParams(window.location.search).get('code');
-  if (!code) return null;
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const codeVerifier = localStorage.getItem('code_verifier');
 
-  const verifier = localStorage.getItem('code_verifier');
+  if (!code || !codeVerifier) {
+    console.error('Kein Code oder Code Verifier gefunden');
+    return null;
+  }
+
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    code_verifier: codeVerifier
+  });
 
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: clientId,
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: redirectUri,
-      code_verifier: verifier
-    })
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body
   });
 
   const data = await response.json();
-  const token = data.access_token;
-  if (token) localStorage.setItem('spotify_access_token', token);
-  return token;
+
+  if (data.access_token) {
+    localStorage.setItem('spotify_access_token', data.access_token);
+    console.log('Token erhalten:', data.access_token);
+    return data.access_token;
+  } else {
+    console.error('Fehler beim Token-Abruf:', data);
+    return null;
+  }
 }
