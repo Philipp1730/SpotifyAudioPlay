@@ -1,9 +1,10 @@
-import { loginWithSpotify, fetchTokenFromRedirect, getValidAccessToken } from './auth.js';
+import { loginWithSpotify, fetchTokenFromRedirect, getValidAccessToken, checkAuthTokens } from './auth.js';
 
 let accessToken = null;
  
 // Seite initialisieren
 window.onload = async () => {
+ checkAuthTokens();
   const params = new URLSearchParams(window.location.search);
   if (params.has('code')) {
     accessToken = await fetchTokenFromRedirect();
