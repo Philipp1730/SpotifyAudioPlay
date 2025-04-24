@@ -1,4 +1,4 @@
-import { loginWithSpotify, fetchTokenFromRedirect } from './auth.js';
+import { loginWithSpotify, fetchTokenFromRedirect, getValidAccessToken } from './auth.js';
 
 let accessToken = null;
  
@@ -46,26 +46,7 @@ window.setBookmark = async function () {
   loadBookmarks();  // Lade alle Bookmarks neu
 }
 
-// Bookmarks laden
-/*window.loadBookmarks = function () {
-  const list = document.getElementById('bookmark-list');
-  list.innerHTML = '';
 
-  Object.keys(localStorage)
-    .filter(k => k.startsWith('bookmark-'))
-    .forEach(key => {
-      const bookmark = JSON.parse(localStorage.getItem(key));
-      const entry = document.createElement('div');
-      entry.className = 'bookmark-entry';
-      entry.innerHTML = `
-        <strong>${bookmark.name}</strong><br>
-        <button onclick="resumeBookmark('${bookmark.uri}', ${bookmark.progress})">▶️ Fortsetzen</button>
-        <button onclick="deleteBookmark('${bookmark.id}')">🗑️ Löschen</button>
-      `;
-      list.appendChild(entry);
-    });
-}
-*/
 window.loadBookmarks = function () {
   const list = document.getElementById('bookmark-list');
   list.innerHTML = '';  // Leere die Liste
@@ -85,21 +66,7 @@ window.loadBookmarks = function () {
       list.appendChild(entry);
     });
 }
-// Bookmark fortsetzen
-/*window.resumeBookmark = async function (uri, progress) {
 
-  const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
-    method: 'PUT',
-    headers: { 
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      uris: [uri],  // Liste der URI des Tracks (nicht des Albums)
-      position_ms: progress
-    })
-  });
-}*/
 window.resumeBookmark = async function (track_uri, progress) {
   // Nur über Bookmark-Keys iterieren
   const bookmarkKey = Object.keys(localStorage)
@@ -111,11 +78,12 @@ window.resumeBookmark = async function (track_uri, progress) {
   }
 
   const bookmark = JSON.parse(localStorage.getItem(bookmarkKey));
+  const token = await getValidAccessToken();  // Zugriffstoken aktualisiert holen
 
   const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -159,8 +127,9 @@ window.checkTokenValidity = async function () {
 // Pause
 window.pausePlayback = async function () {
  
-  const isValidToken = await checkTokenValidity();
-  if (!isValidToken) return; 
+  //const isValidToken = await checkTokenValidity();
+  //if (!isValidToken) return; 
+  const token = await getValidAccessToken();  // gültiges Token holen
  
   const playback = await getCurrentPlayback();
   if (!playback || !playback.item) return;
@@ -179,7 +148,7 @@ window.pausePlayback = async function () {
 
   await fetch(`https://api.spotify.com/v1/me/player/pause`, {
     method: 'PUT',
-    headers: { 'Authorization': `Bearer ${accessToken}` }
+    headers: { 'Authorization': `Bearer ${token}` }
   });
  loadBookmarks();
 }
@@ -188,9 +157,9 @@ window.pausePlayback = async function () {
 
 // Wiedergabe fortsetzen
 window.resumePlayback = async function () {
- 
-  const isValidToken = await checkTokenValidity();
-  if (!isValidToken) return;
+  const token = await getValidAccessToken();  // gültiges Token holen
+ // const isValidToken = await checkTokenValidity();
+ // if (!isValidToken) return;
  
   const tempBookmark = localStorage.getItem('bookmark-temp');
   if (tempBookmark) {
@@ -201,7 +170,7 @@ window.resumePlayback = async function () {
     const res = await fetch(`https://api.spotify.com/v1/me/player/play`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -222,7 +191,7 @@ window.resumePlayback = async function () {
     // Wenn kein temp-Bookmark existiert, einfach standard play
     await fetch(`https://api.spotify.com/v1/me/player/play`, {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${accessToken}` }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
   }
 }
@@ -231,8 +200,9 @@ window.resumePlayback = async function () {
 
 // Aktuelle Wiedergabe holen
 window.getCurrentPlayback=async function () {
+  const token = await getValidAccessToken();  // gültiges Token holen
   const res = await fetch(`https://api.spotify.com/v1/me/player/currently-playing`, {
-    headers: { 'Authorization': `Bearer ${accessToken}` }
+    headers: { 'Authorization': `Bearer ${token}` }
   });
 
   if (res.status === 204 || !res.ok) return null;
