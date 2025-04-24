@@ -34,6 +34,7 @@ window.setBookmark = async function () {
     album_id: item.album.id,  // Speichern der Album-ID
     album_name: item.album.name,  // Speichern des Album-Namens
     progress: progress_ms  // Speichern des Fortschritts
+    console.log(`Speichere objekt mit URI: ${track_uri} und Position: ${progress}`);
   };
 
   // Lösche alle Bookmarks mit der gleichen album-ID
