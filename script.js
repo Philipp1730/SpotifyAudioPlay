@@ -28,20 +28,21 @@ window.setBookmark = async function () {
 
   const { item, progress_ms } = playback;  // 'item' ist das aktuelle Track-Objekt
   const bookmark = {
-    id: item.id,  // Hier speichern wir die ID des Tracks und nicht des Albums
-    name: item.name,  // Der Name des Tracks wird gespeichert
-    uri: item.uri,  // Der URI des Tracks wird gespeichert
-    progress: progress_ms  // Der Fortschritt der Wiedergabe
+    track_id: item.id,  // Speichert die ID des Tracks
+    track_name: item.name,  // Speichert den Titel des Tracks
+    track_uri: item.uri,  // Speichert den URI des Tracks
+    album_id: item.album.id,  // Speichert die ID des Albums
+    album_name: item.album.name,  // Speichert den Albumtitel
+    progress: progress_ms  // Speichert den Fortschritt des Tracks
   };
 
-  // Entferne bestehendes Bookmark, falls es bereits gespeichert ist
-  const existingBookmark = localStorage.getItem(`bookmark-${bookmark.id}`);
-  if (existingBookmark) {
-    localStorage.removeItem(`bookmark-${bookmark.id}`);
-  }
+  // Lösche alle Bookmarks mit der gleichen Album-ID
+  Object.keys(localStorage)
+    .filter(key => key.startsWith('bookmark-') && JSON.parse(localStorage.getItem(key)).album_id === bookmark.album_id)
+    .forEach(key => localStorage.removeItem(key));
 
   // Speichere das neue Bookmark
-  localStorage.setItem(`bookmark-${bookmark.id}`, JSON.stringify(bookmark));
+  localStorage.setItem(`bookmark-${bookmark.track_id}`, JSON.stringify(bookmark));
   loadBookmarks();  // Lade alle Bookmarks nach dem Setzen neu
 }
 
