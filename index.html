@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.spotify.com; connect-src 'self' https://api.spotify.com; img-src 'self' data:; style-src 'self' 'unsafe-inline';">
+  <meta charset="UTF-8" http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.spotify.com 'unsafe-inline'; connect-src 'self' https://api.spotify.com; img-src 'self' data:; style-src 'self' 'unsafe-inline';">
   <title>SpotifyAudioPlay</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -29,7 +29,7 @@
   </main>
 
   <footer>
-    <p>&copy; 2025 SpotifyAudioPlay</p>
+    <p> document.querySelector('footer p').textContent = `© ${new Date().getFullYear()} SpotifyAudioPlay`;</p>
   </footer>
 
   <script type="module" src="script.js"></script>
