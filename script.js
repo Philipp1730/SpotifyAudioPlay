@@ -23,48 +23,20 @@ function showControls() {
 
 // Bookmark setzen
 window.setBookmark = async function () {
-  const token = localStorage.getItem('spotify_access_token');
-  if (!token) {
-    console.error('Kein Spotify-Token gefunden');
-    return;
-  }
+  const playback = await getCurrentPlayback();
+  if (!playback) return;
 
-  // Hole den aktuellen Track und die Wiedergabeposition
-  fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data && data.item) {
-      const trackId = data.item.id;
-      const trackName = data.item.name;
-      const trackPosition = data.progress_ms; // Aktuelle Wiedergabeposition in Millisekunden
+  const { item, progress_ms } = playback;
+  const bookmark = {
+    id: item.album.id,
+    name: item.album.name,
+    uri: item.album.uri,
+    progress: progress_ms
+  };
 
-      // Überprüfen, ob ein Bookmark für dieses Hörbuch existiert
-      let bookmarks = JSON.parse(localStorage.getItem('bookmarks')) || [];
-
-      // Entferne alte Bookmarks für das gleiche Hörbuch
-      bookmarks = bookmarks.filter(bookmark => bookmark.trackId !== trackId);
-
-      // Füge das neue Bookmark hinzu
-      bookmarks.push({
-        trackId,
-        trackName,
-        trackPosition
-      });
-
-      // Speichern der Bookmarks
-      localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-      console.log(`Bookmark für ${trackName} bei ${trackPosition} ms gesetzt`);
-    } else {
-      console.error('Kein Track gerade gespielt');
-    }
-  })
-  .catch(error => console.error('Fehler:', error));
+  localStorage.setItem(bookmark-${bookmark.id}, JSON.stringify(bookmark));
+  loadBookmarks();
 }
-
 // Bookmarks laden
 window.loadBookmarks = function () {
   const list = document.getElementById('bookmark-list');
