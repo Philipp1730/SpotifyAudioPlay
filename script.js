@@ -14,7 +14,7 @@ window.onload = async () => {
     showControls();
   }
 };
-
+ 
 // Steuerung anzeigen
 function showControls() {
   document.getElementById('login-container').style.display = 'none';
