@@ -198,3 +198,6 @@ function startTokenRefreshTimer() {
     }
   }, 50 * 60 * 1000); // 50 minutes
 }
+
+// Make the login button accessible
+window.loginWithSpotify = loginWithSpotify;
