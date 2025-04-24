@@ -69,3 +69,9 @@ footer {
 .hidden {
   display: none;
 }
+/* Beispiel für ein responsives Layout */
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+}
