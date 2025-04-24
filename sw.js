@@ -12,9 +12,9 @@ self.addEventListener('install', (event) => {
   ]).catch((error) => {
     console.error('Failed to cache resources:', error);
       });
-    })
+    }))
  });
-});
+
 
 
 self.addEventListener('fetch', (event) => {
