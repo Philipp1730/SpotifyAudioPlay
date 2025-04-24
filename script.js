@@ -139,18 +139,6 @@ window.deleteBookmark = function (key) {
   localStorage.removeItem(key);
   loadBookmarks();
 }
-
-// Pause und Fortsetzen der Wiedergabe
-window.togglePause = async function () {
-  const playback = await getCurrentPlayback();
-
-  if (playback && playback.is_playing) {
-    await pausePlayback();
-  } else {
-    await resumePlayback();
-  }
-}
-
 // Pause
 async function pausePlayback() {
   await fetch(`https://api.spotify.com/v1/me/player/pause`, {
@@ -166,6 +154,18 @@ async function resumePlayback() {
     headers: { 'Authorization': `Bearer ${accessToken}` }
   });
 }
+// Pause und Fortsetzen der Wiedergabe
+window.togglePause = async function () {
+  const playback = await getCurrentPlayback();
+
+  if (playback && playback.is_playing) {
+    await pausePlayback();
+  } else {
+    await resumePlayback();
+  }
+}
+
+
 
 // Aktuelle Wiedergabe holen
 async function getCurrentPlayback() {
