@@ -140,7 +140,20 @@ window.deleteBookmark = function (key) {
   loadBookmarks();
 }
 // Pause
-window.pausePlayback=async function () {
+window.pausePlayback = async function () {
+  const playback = await getCurrentPlayback();
+  if (!playback || !playback.item) return;
+
+  const { item, progress_ms } = playback;
+  const bookmark = {
+    track_id: item.id,
+    track_uri: item.uri,
+    album_id: item.album.id,
+    progress: progress_ms
+  };
+
+  localStorage.setItem('bookmark-temp', JSON.stringify(bookmark));
+
   await fetch(`https://api.spotify.com/v1/me/player/pause`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -148,20 +161,37 @@ window.pausePlayback=async function () {
 }
 
 // Wiedergabe fortsetzen
-window.resumePlayback=async function () {
-  await fetch(`https://api.spotify.com/v1/me/player/play`, {
-    method: 'PUT',
-    headers: { 'Authorization': `Bearer ${accessToken}` }
-  });
-}
-// Pause und Fortsetzen der Wiedergabe
-window.togglePause = async function () {
-  const playback = await getCurrentPlayback();
+window.resumePlayback = async function () {
+  const tempBookmark = localStorage.getItem('bookmark-temp');
+  if (tempBookmark) {
+    const bookmark = JSON.parse(tempBookmark);
 
-  if (playback && playback.is_playing) {
-    await pausePlayback();
+    const res = await fetch(`https://api.spotify.com/v1/me/player/play`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        context_uri: `spotify:album:${bookmark.album_id}`,
+        offset: { uri: bookmark.track_uri },
+        position_ms: bookmark.progress
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      console.error('Fehler beim Resume aus Bookmark:', err);
+    } else {
+      localStorage.removeItem('bookmark-temp');
+    }
+
   } else {
-    await resumePlayback();
+    // Wenn kein temp-Bookmark existiert, einfach standard play
+    await fetch(`https://api.spotify.com/v1/me/player/play`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
   }
 }
 
