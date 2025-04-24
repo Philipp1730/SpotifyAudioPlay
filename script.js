@@ -4,7 +4,6 @@ let accessToken = null;
  
 // Seite initialisieren
 window.onload = async () => {
- checkAuthTokens();
   const params = new URLSearchParams(window.location.search);
   if (params.has('code')) {
     accessToken = await fetchTokenFromRedirect();
@@ -15,6 +14,8 @@ window.onload = async () => {
     accessToken = localStorage.getItem('spotify_access_token');
     showControls();
     startTokenRefreshTimer();
+  }else{
+    checkAuthTokens();
   }
 };
 // Steuerung anzeigen
