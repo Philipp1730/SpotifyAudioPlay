@@ -34,9 +34,9 @@ window.setBookmark = async function () {
     album_id: item.album.id,  // Speichern der Album-ID
     album_name: item.album.name,  // Speichern des Album-Namens
     progress: progress_ms  // Speichern des Fortschritts
-    console.log(`Speichere objekt mit URI: ${track_uri} und Position: ${progress}`);
+    
   };
-
+  console.log(`Speichere objekt mit URI: ${item.uri} und Position: ${progress_ms}`);
   // Lösche alle Bookmarks mit der gleichen album-ID
   Object.keys(localStorage)
     .filter(key => key.startsWith('bookmark-') && JSON.parse(localStorage.getItem(key)).album_id === bookmark.album_id)
@@ -87,9 +87,9 @@ window.loadBookmarks = function () {
     });
 }
 // Bookmark fortsetzen
-window.resumeBookmark = async function (track_uri, progress) {
-  console.log(`Versuche fortzusetzen mit URI: ${track_uri} und Position: ${progress}`);
-  
+window.resumeBookmark = async function (uri, progress) {
+  console.log(`Versuche fortzusetzen mit URI: ${uri} und Position: ${progress}`);
+
   const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
     headers: { 
@@ -97,7 +97,7 @@ window.resumeBookmark = async function (track_uri, progress) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      context_uri: track_uri,
+      uris: [uri],  // Liste der URI des Tracks (nicht des Albums)
       position_ms: progress
     })
   });
