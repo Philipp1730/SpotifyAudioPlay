@@ -69,7 +69,12 @@ export async function fetchTokenFromRedirect() {
 
   if (data.access_token) {
     localStorage.setItem('spotify_access_token', data.access_token);
-    localStorage.setItem('spotify_refresh_token', data.refresh_token); // <--- NEU
+    if (data.refresh_token) {
+      localStorage.setItem('spotify_refresh_token', data.refresh_token);
+      console.log('Refresh Token erhalten:', data.refresh_token);
+    } else {
+      console.warn('⚠️ Kein Refresh Token von Spotify erhalten. Token kann später nicht erneuert werden.');
+    }
     console.log('Token erhalten:', data.access_token);
     return data.access_token;
   } else {
