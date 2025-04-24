@@ -1,97 +1,98 @@
-// script.js
 import { loginWithSpotify, fetchTokenFromRedirect } from './auth.js';
 
 let accessToken = null;
 
+// Seite initialisieren
 window.onload = async () => {
   const params = new URLSearchParams(window.location.search);
   if (params.has('code')) {
-    const token = await fetchTokenFromRedirect();
-    if (token) {
-      history.replaceState(null, '', '/SpotifyAudioPlay/'); // entfernt ?code=... aus URL
-      showControls();
-    }
+    accessToken = await fetchTokenFromRedirect();
+    history.replaceState(null, '', '/SpotifyAudioPlay/');
+    showControls();
   } else if (localStorage.getItem('spotify_access_token')) {
+    accessToken = localStorage.getItem('spotify_access_token');
     showControls();
   }
 };
 
+// Steuerung anzeigen
 function showControls() {
   document.getElementById('login-container').style.display = 'none';
   document.getElementById('controls').style.display = 'block';
 }
 
-
-window.addEventListener('DOMContentLoaded', async () => {
-  accessToken = localStorage.getItem('spotify_access_token');
-  if (!accessToken) {
-    accessToken = await fetchTokenFromRedirect();
-  }
-
-  if (accessToken) {
-    document.getElementById('login-button').style.display = 'none';
-    document.getElementById('controls').style.display = 'block';
-  }
-});
-
-window.loginWithSpotify = loginWithSpotify;
-
-window.setBookmark = async () => {
+// Bookmark setzen
+window.setBookmark = async function () {
   const playback = await getCurrentPlayback();
-  if (playback) {
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
-    bookmarks[playback.context?.uri || playback.item.album.uri] = {
-      position: playback.progress_ms,
-      uri: playback.context?.uri || playback.item.album.uri,
-      name: playback.item.album.name
-    };
-    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-    alert('Bookmark gespeichert!');
-  }
-};
+  if (!playback) return;
 
-window.loadBookmarks = () => {
-  const container = document.getElementById('bookmark-list');
-  container.innerHTML = '';
-  const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
-  for (const [uri, data] of Object.entries(bookmarks)) {
-    const item = document.createElement('div');
-    item.className = 'bookmark-item';
-    item.innerHTML = `
-      <strong>${data.name}</strong>
-      <button onclick="playFromBookmark('${data.uri}', ${data.position})">▶️</button>
-      <button onclick="deleteBookmark('${uri}')">🗑️</button>
-    `;
-    container.appendChild(item);
-  }
-};
+  const { item, progress_ms } = playback;
+  const bookmark = {
+    id: item.album.id,
+    name: item.album.name,
+    uri: item.album.uri,
+    progress: progress_ms
+  };
 
-window.deleteBookmark = (uri) => {
-  const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '{}');
-  delete bookmarks[uri];
-  localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-  window.loadBookmarks();
-};
-
-window.playFromBookmark = async (uri, position) => {
-  await fetch('https://api.spotify.com/v1/me/player/play', {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + accessToken },
-    body: JSON.stringify({ context_uri: uri, position_ms: position })
-  });
-};
-
-window.pausePlayback = async () => {
-  await fetch('https://api.spotify.com/v1/me/player/pause', {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + accessToken }
-  });
-};
-
-async function getCurrentPlayback() {
-  const res = await fetch('https://api.spotify.com/v1/me/player', {
-    headers: { 'Authorization': 'Bearer ' + accessToken }
-  });
-  if (res.ok) return await res.json();
-  else alert('Fehler beim Abrufen der Wiedergabe.');
+  localStorage.setItem(`bookmark-${bookmark.id}`, JSON.stringify(bookmark));
+  loadBookmarks();
 }
+
+// Bookmarks laden
+window.loadBookmarks = function () {
+  const list = document.getElementById('bookmark-list');
+  list.innerHTML = '';
+
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('bookmark-'))
+    .forEach(key => {
+      const bookmark = JSON.parse(localStorage.getItem(key));
+      const entry = document.createElement('div');
+      entry.className = 'bookmark-entry';
+      entry.innerHTML = `
+        <strong>${bookmark.name}</strong><br>
+        <button onclick="resumeBookmark('${bookmark.uri}', ${bookmark.progress})">▶️ Fortsetzen</button>
+        <button onclick="deleteBookmark('${bookmark.id}')">🗑️ Löschen</button>
+      `;
+      list.appendChild(entry);
+    });
+}
+
+// Bookmark fortsetzen
+window.resumeBookmark = async function (uri, progress) {
+  await fetch(`https://api.spotify.com/v1/me/player/play`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+    body: JSON.stringify({
+      context_uri: uri,
+      position_ms: progress
+    })
+  });
+}
+
+// Bookmark löschen
+window.deleteBookmark = function (id) {
+  localStorage.removeItem(`bookmark-${id}`);
+  loadBookmarks();
+}
+
+// Pause
+window.pausePlayback = async function () {
+  await fetch(`https://api.spotify.com/v1/me/player/pause`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+}
+
+// Aktuelle Wiedergabe holen
+async function getCurrentPlayback() {
+  const res = await fetch(`https://api.spotify.com/v1/me/player/currently-playing`, {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+
+  if (res.status === 204 || !res.ok) return null;
+  return await res.json();
+}
+
+// Login-Button zugänglich machen
+window.loginWithSpotify = loginWithSpotify;
