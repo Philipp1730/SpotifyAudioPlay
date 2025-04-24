@@ -140,7 +140,7 @@ window.deleteBookmark = function (key) {
   loadBookmarks();
 }
 // Pause
-async function pausePlayback() {
+window.pausePlayback=async function () {
   await fetch(`https://api.spotify.com/v1/me/player/pause`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -148,7 +148,7 @@ async function pausePlayback() {
 }
 
 // Wiedergabe fortsetzen
-async function resumePlayback() {
+window.resumePlayback=async function () {
   await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -168,7 +168,7 @@ window.togglePause = async function () {
 
 
 // Aktuelle Wiedergabe holen
-async function getCurrentPlayback() {
+window.getCurrentPlayback=async function () {
   const res = await fetch(`https://api.spotify.com/v1/me/player/currently-playing`, {
     headers: { 'Authorization': `Bearer ${accessToken}` }
   });
