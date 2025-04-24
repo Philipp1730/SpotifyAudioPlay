@@ -109,6 +109,7 @@ window.deleteBookmark = function (album_id) {
   console.log(`Lösche Bookmark mit Key: bookmark-${bookmark.album_id}`);
   localStorage.removeItem(bookmark-${bookmark.album_id});
   console.log(`Neu laden`);
+  
   loadBookmarks();
 }
 
