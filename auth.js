@@ -69,6 +69,7 @@ export async function fetchTokenFromRedirect() {
 
   if (data.access_token) {
     localStorage.setItem('spotify_access_token', data.access_token);
+    localStorage.setItem('spotify_refresh_token', data.refresh_token); // <--- NEU
     console.log('Token erhalten:', data.access_token);
     return data.access_token;
   } else {
