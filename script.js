@@ -26,28 +26,28 @@ window.setBookmark = async function () {
   const playback = await getCurrentPlayback();
   if (!playback) return;
 
-  const { item, progress_ms } = playback;  // 'item' ist das aktuelle Track-Objekt
+  const { item, progress_ms } = playback;  // 'item' ist der aktuelle Track
   const bookmark = {
-    track_id: item.id,  // Speichert die ID des Tracks
-    track_name: item.name,  // Speichert den Titel des Tracks
-    track_uri: item.uri,  // Speichert den URI des Tracks
-    album_id: item.album.id,  // Speichert die ID des Albums
-    album_name: item.album.name,  // Speichert den Albumtitel
-    progress: progress_ms  // Speichert den Fortschritt des Tracks
+    track_id: item.id,  // Speichern der Track-ID
+    track_name: item.name,  // Speichern des Track-Namens
+    track_uri: item.uri,  // Speichern des Track-URIs
+    album_id: item.album.id,  // Speichern der Album-ID
+    album_name: item.album.name,  // Speichern des Album-Namens
+    progress: progress_ms  // Speichern des Fortschritts
   };
 
-  // Lösche alle Bookmarks mit der gleichen Album-ID
+  // Lösche alle Bookmarks mit der gleichen album-ID
   Object.keys(localStorage)
     .filter(key => key.startsWith('bookmark-') && JSON.parse(localStorage.getItem(key)).album_id === bookmark.album_id)
     .forEach(key => localStorage.removeItem(key));
 
-  // Speichere das neue Bookmark
-  localStorage.setItem(`bookmark-${bookmark.track_id}`, JSON.stringify(bookmark));
-  loadBookmarks();  // Lade alle Bookmarks nach dem Setzen neu
+  // Speichere das neue Bookmark mit der album-ID als Schlüssel
+  localStorage.setItem(`bookmark-${bookmark.album_id}`, JSON.stringify(bookmark));
+  loadBookmarks();  // Lade alle Bookmarks neu
 }
 
 // Bookmarks laden
-window.loadBookmarks = function () {
+/*window.loadBookmarks = function () {
   const list = document.getElementById('bookmark-list');
   list.innerHTML = '';
 
@@ -65,7 +65,26 @@ window.loadBookmarks = function () {
       list.appendChild(entry);
     });
 }
+*/
+window.loadBookmarks = function () {
+  const list = document.getElementById('bookmark-list');
+  list.innerHTML = '';  // Leere die Liste
 
+  // Gehe durch alle gespeicherten Bookmarks
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('bookmark-'))
+    .forEach(key => {
+      const bookmark = JSON.parse(localStorage.getItem(key));
+      const entry = document.createElement('div');
+      entry.className = 'bookmark-entry';
+      entry.innerHTML = `
+        <strong>${bookmark.track_name}</strong> - ${bookmark.album_name}<br>
+        <button onclick="resumeBookmark('${bookmark.track_uri}', ${bookmark.progress})">▶️ Fortsetzen</button>
+        <button onclick="deleteBookmark('${bookmark.track_id}')">🗑️ Löschen</button>
+      `;
+      list.appendChild(entry);
+    });
+}
 // Bookmark fortsetzen
 window.resumeBookmark = async function (uri, progress) {
   await fetch(`https://api.spotify.com/v1/me/player/play`, {
@@ -78,9 +97,10 @@ window.resumeBookmark = async function (uri, progress) {
   });
 }
 
+
 // Bookmark löschen
 window.deleteBookmark = function (id) {
-  localStorage.removeItem(`bookmark-${id}`);
+  localStorage.removeItem(`bookmark-${album_id}`);
   loadBookmarks();
 }
 
