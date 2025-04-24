@@ -11,9 +11,10 @@ self.addEventListener('install', (event) => {
     '/images/icon-512x512.png'
   ]).catch((error) => {
     console.error('Failed to cache resources:', error);
-  });
+      });
+    })
  });
-})
+});
 
 
 self.addEventListener('fetch', (event) => {
