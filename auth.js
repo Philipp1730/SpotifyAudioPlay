@@ -133,7 +133,7 @@ export async function fetchTokenFromRedirect() {
   return token;
 }
 
-export function checkAuthTokens() {
+/*export function checkAuthTokens() {
   const access = localStorage.getItem('spotify_access_token');
   const refresh = localStorage.getItem('spotify_refresh_token');
 
@@ -143,5 +143,5 @@ export function checkAuthTokens() {
   } else {
     console.log('✅ Tokens vorhanden. Zugriff möglich.');
   }
-}
+}*/
 
