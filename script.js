@@ -173,15 +173,17 @@ window.pausePlayback = async function () {
     album_name: item.album.name,  // Album-Name hinzufügen
     progress: progress_ms
   };
-
-
-// Lösche alle Bookmarks mit der gleichen album-ID
-  Object.keys(localStorage)
-    .filter(key => key.startsWith('bookmark-') && JSON.parse(localStorage.getItem(key)).album_id === bookmark.album_id)
-    .forEach(key => localStorage.removeItem(key));
- 
+  
   localStorage.setItem('bookmark-temp', JSON.stringify(bookmark));
+ // 📦 Alle gespeicherten Bookmarks laden
+  const bookmarksRaw = localStorage.getItem('bookmarks');
+  let bookmarks = bookmarksRaw ? JSON.parse(bookmarksRaw) : [];
 
+  // 🧹 Alte Bookmarks mit gleicher album_id entfernen
+  bookmarks = bookmarks.filter(b => b.album_id !== albumId);
+
+  // 💾 Neue Liste speichern (ohne andere Tracks aus demselben Album)
+  localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
   await fetch(`https://api.spotify.com/v1/me/player/pause`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${token}` }
