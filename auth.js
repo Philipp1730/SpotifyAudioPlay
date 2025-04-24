@@ -133,3 +133,15 @@ export async function fetchTokenFromRedirect() {
   return token;
 }
 
+export function checkAuthTokens() {
+  const access = localStorage.getItem('spotify_access_token');
+  const refresh = localStorage.getItem('spotify_refresh_token');
+
+  if (!access || !refresh) {
+    console.warn('❌ Kein gültiger Access- oder Refresh-Token vorhanden. Weiterleitung zur Anmeldung.');
+    loginWithSpotify(); // Löst neuen Login aus
+  } else {
+    console.log('✅ Tokens vorhanden. Zugriff möglich.');
+  }
+}
+
