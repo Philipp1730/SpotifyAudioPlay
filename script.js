@@ -179,7 +179,7 @@ window.resumePlayback = async function () {
   console.error('Token ist ungültig oder abgelaufen');
   // Hole neuen Token
 }
-   
+    
     const res = await fetch(`https://api.spotify.com/v1/me/player/play`, {
       method: 'PUT',
       headers: {
