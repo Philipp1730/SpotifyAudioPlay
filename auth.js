@@ -1,7 +1,7 @@
 const clientId = 'a727fe020d254b26a32d982d998d0126'; // <<< Deine echte Client ID hier einfügen
 const redirectUri = 'https://philipp1730.github.io/SpotifyAudioPlay/';
-const scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
-
+const scope = 'user-read-playback-state user-modify-playback-state user-read-currently-playing user-library-read app-remote-control';
+//const SCOPES = 'user-library-read app-remote-control';
 function generateCodeVerifier(length = 128) {
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let text = '';
