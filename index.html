@@ -1,32 +1,37 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>SpotifyAudioPlay</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <h1>SpotifyAudioPlay</h1>
-    <p>Setze Lesezeichen für deine Spotify-Hörbücher 🎧</p>
+    <p>Dein persönliches Hörbuch-Lesezeichen-Tool</p>
   </header>
 
   <main>
-    <button id="login-button">Login with Spotify</button>
-    <div id="controls" class="hidden">
-      <button id="pause-button">⏸️ Pause</button>
-      <button id="bookmark-button">🔖 Bookmark setzen</button>
-      <button id="load-bookmarks">📚 Bookmarks anzeigen</button>
+    <div id="login-container">
+      <button id="login-button" onclick="loginWithSpotify()">Login with Spotify</button>
     </div>
 
-    <section id="bookmarks"></section>
+    <div id="controls" style="display: none;">
+      <div class="button-group">
+        <button onclick="setBookmark()">📍 Bookmark setzen</button>
+        <button onclick="loadBookmarks()">🔖 Bookmarks laden</button>
+        <button onclick="pausePlayback()">⏸ Pause</button>
+      </div>
+
+      <h2>📚 Bookmarks</h2>
+      <div id="bookmark-list" class="bookmark-list"></div>
+    </div>
   </main>
 
   <footer>
-    <p>&copy; 2025 SpotifyAudioPlay – GitHub Pages App</p>
+    <p>&copy; 2025 SpotifyAudioPlay</p>
   </footer>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
