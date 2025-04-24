@@ -219,5 +219,5 @@ function startTokenRefreshTimer() {
     if (newToken) {
       console.log('Token automatisch erneuert:', newToken);
     }
-  }, 50 * 60 * 1000); // 50 Minuten
+  }, 50 * 60 * 10); // 50 Minuten
 }
