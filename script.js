@@ -34,9 +34,15 @@ window.setBookmark = async function () {
     progress: progress_ms
   };
 
-  localStorage.setItem(bookmark-${bookmark.id}, JSON.stringify(bookmark));
+  // Entferne das alte Bookmark, wenn ein neues für das gleiche Album gesetzt wird
+  if (localStorage.getItem(`bookmark-${bookmark.id}`)) {
+    localStorage.removeItem(`bookmark-${bookmark.id}`);
+  }
+
+  localStorage.setItem(`bookmark-${bookmark.id}`, JSON.stringify(bookmark));
   loadBookmarks();
 }
+
 // Bookmarks laden
 window.loadBookmarks = function () {
   const list = document.getElementById('bookmark-list');
@@ -75,9 +81,28 @@ window.deleteBookmark = function (id) {
   loadBookmarks();
 }
 
+// Pause und Fortsetzen der Wiedergabe
+window.togglePause = async function () {
+  const playback = await getCurrentPlayback();
+
+  if (playback && playback.is_playing) {
+    await pausePlayback();
+  } else {
+    await resumePlayback();
+  }
+}
+
 // Pause
-window.pausePlayback = async function () {
+async function pausePlayback() {
   await fetch(`https://api.spotify.com/v1/me/player/pause`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+}
+
+// Wiedergabe fortsetzen
+async function resumePlayback() {
+  await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${accessToken}` }
   });
