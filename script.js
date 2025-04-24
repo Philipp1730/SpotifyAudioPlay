@@ -1,4 +1,4 @@
-import { loginWithSpotify, fetchTokenFromRedirect, getValidAccessToken, checkAuthTokens } from './auth.js';
+import { loginWithSpotify, fetchTokenFromRedirect, getValidAccessToken } from './auth.js';
 
 let accessToken = null;
  
@@ -174,6 +174,12 @@ window.pausePlayback = async function () {
     progress: progress_ms
   };
 
+
+// Lösche alle Bookmarks mit der gleichen album-ID
+  Object.keys(localStorage)
+    .filter(key => key.startsWith('bookmark-') && JSON.parse(localStorage.getItem(key)).album_id === bookmark.album_id)
+    .forEach(key => localStorage.removeItem(key));
+ 
   localStorage.setItem('bookmark-temp', JSON.stringify(bookmark));
 
   await fetch(`https://api.spotify.com/v1/me/player/pause`, {
