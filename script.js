@@ -3,7 +3,7 @@ import { loginWithSpotify, fetchTokenFromRedirect, getValidAccessToken, checkAut
 let accessToken = null;
  
 // Seite initialisieren
-window.onload = async () => {
+/*window.onload = async () => {
   const params = new URLSearchParams(window.location.search);
   if (params.has('code')) {
     accessToken = await fetchTokenFromRedirect();
@@ -16,6 +16,34 @@ window.onload = async () => {
     startTokenRefreshTimer();
   }else{
     checkAuthTokens();
+  }
+};*/
+window.onload = async () => {
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.has('code')) {
+    accessToken = await fetchTokenFromRedirect();
+    if (accessToken) {
+      history.replaceState(null, '', '/SpotifyAudioPlay/');
+      showControls();
+      startTokenRefreshTimer();
+    } else {
+      console.warn('❌ Token konnte nach Login nicht geladen werden. Leite erneut weiter.');
+      loginWithSpotify();
+    }
+  } else {
+    const access = localStorage.getItem('spotify_access_token');
+    const refresh = localStorage.getItem('spotify_refresh_token');
+
+    if (access && refresh) {
+      accessToken = access;
+      console.log('✅ Lokale Tokens vorhanden.');
+      showControls();
+      startTokenRefreshTimer();
+    } else {
+      console.warn('❌ Keine gültigen Tokens gefunden. Weiterleitung zur Anmeldung.');
+      loginWithSpotify();
+    }
   }
 };
 // Steuerung anzeigen
