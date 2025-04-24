@@ -147,8 +147,10 @@ window.pausePlayback = async function () {
   const { item, progress_ms } = playback;
   const bookmark = {
     track_id: item.id,
+    track_name: item.name,   // Jetzt den Track-Namen speichern
     track_uri: item.uri,
     album_id: item.album.id,
+    album_name: item.album.name,  // Album-Name hinzufügen
     progress: progress_ms
   };
 
@@ -158,7 +160,10 @@ window.pausePlayback = async function () {
     method: 'PUT',
     headers: { 'Authorization': `Bearer ${accessToken}` }
   });
+ loadBookmarks();
 }
+
+
 
 // Wiedergabe fortsetzen
 window.resumePlayback = async function () {
