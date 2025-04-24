@@ -2,7 +2,7 @@
   "name": "SpotifyAudioPlay",
   "short_name": "AudioPlay",
   "description": "Ein Lesezeichen-Tool für Hörbücher auf Spotify.",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1DB954",
