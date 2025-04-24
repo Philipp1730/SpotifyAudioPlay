@@ -76,8 +76,8 @@ export async function fetchTokenFromRedirect() {
     console.error('Fehler beim Token-Abruf:', data);
     return null;
   }
-
-  async function refreshAccessToken() {
+}
+  export async function refreshAccessToken() {
   const refreshToken = localStorage.getItem('spotify_refresh_token');
   if (!refreshToken) {
     console.error('Kein Refresh Token gefunden.');
@@ -128,5 +128,3 @@ export async function fetchTokenFromRedirect() {
   return token;
 }
 
-  
-}
