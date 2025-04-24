@@ -3,6 +3,25 @@ import { loginWithSpotify, fetchTokenFromRedirect } from './auth.js';
 
 let accessToken = null;
 
+window.onload = async () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('code')) {
+    const token = await fetchTokenFromRedirect();
+    if (token) {
+      history.replaceState(null, '', '/SpotifyAudioPlay/'); // entfernt ?code=... aus URL
+      showControls();
+    }
+  } else if (localStorage.getItem('spotify_access_token')) {
+    showControls();
+  }
+};
+
+function showControls() {
+  document.getElementById('login-container').style.display = 'none';
+  document.getElementById('controls').style.display = 'block';
+}
+
+
 window.addEventListener('DOMContentLoaded', async () => {
   accessToken = localStorage.getItem('spotify_access_token');
   if (!accessToken) {
