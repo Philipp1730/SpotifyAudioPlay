@@ -76,4 +76,57 @@ export async function fetchTokenFromRedirect() {
     console.error('Fehler beim Token-Abruf:', data);
     return null;
   }
+
+  export async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem('spotify_refresh_token');
+  if (!refreshToken) {
+    console.error('Kein Refresh Token gefunden.');
+    return null;
+  }
+
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+    client_id: clientId
+  });
+
+  const response = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body
+  });
+
+  const data = await response.json();
+
+  if (data.access_token) {
+    localStorage.setItem('spotify_access_token', data.access_token);
+    console.log('Neuer Access Token erhalten:', data.access_token);
+    return data.access_token;
+  } else {
+    console.error('Fehler beim Token-Refresh:', data);
+    return null;
+  }
+}
+  
+  export async function getValidAccessToken() {
+  let token = localStorage.getItem('spotify_access_token');
+
+  // Probiere einen Test-API-Aufruf
+  const testResponse = await fetch('https://api.spotify.com/v1/me', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (testResponse.status === 401) {
+    console.warn('Access Token abgelaufen. Versuche zu erneuern…');
+    token = await refreshAccessToken();
+  }
+
+  return token;
+}
+
+  
 }
