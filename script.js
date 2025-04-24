@@ -9,9 +9,11 @@ window.onload = async () => {
     accessToken = await fetchTokenFromRedirect();
     history.replaceState(null, '', '/SpotifyAudioPlay/');
     showControls();
+    startTokenRefreshTimer();
   } else if (localStorage.getItem('spotify_access_token')) {
     accessToken = localStorage.getItem('spotify_access_token');
     showControls();
+    startTokenRefreshTimer();
   }
 };
 // Beim Laden der Seite sofort einen gültigen Access Token holen
@@ -225,3 +227,13 @@ window.getCurrentPlayback=async function () {
 
 // Login-Button zugänglich machen
 window.loginWithSpotify = loginWithSpotify;
+
+
+function startTokenRefreshTimer() {
+  setInterval(async () => {
+    const newToken = await getValidAccessToken();
+    if (newToken) {
+      console.log('Token automatisch erneuert:', newToken);
+    }
+  }, 50 * 60 * 1000); // 50 Minuten
+}
