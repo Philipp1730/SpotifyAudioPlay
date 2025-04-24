@@ -26,21 +26,23 @@ window.setBookmark = async function () {
   const playback = await getCurrentPlayback();
   if (!playback) return;
 
-  const { item, progress_ms } = playback;
+  const { item, progress_ms } = playback;  // 'item' ist das aktuelle Track-Objekt
   const bookmark = {
-    id: item.album.id,
-    name: item.album.name,
-    uri: item.album.uri,
-    progress: progress_ms
+    id: item.id,  // Hier speichern wir die ID des Tracks und nicht des Albums
+    name: item.name,  // Der Name des Tracks wird gespeichert
+    uri: item.uri,  // Der URI des Tracks wird gespeichert
+    progress: progress_ms  // Der Fortschritt der Wiedergabe
   };
 
-  // Entferne das alte Bookmark, wenn ein neues für das gleiche Album gesetzt wird
-  if (localStorage.getItem(`bookmark-${bookmark.id}`)) {
+  // Entferne bestehendes Bookmark, falls es bereits gespeichert ist
+  const existingBookmark = localStorage.getItem(`bookmark-${bookmark.id}`);
+  if (existingBookmark) {
     localStorage.removeItem(`bookmark-${bookmark.id}`);
   }
 
+  // Speichere das neue Bookmark
   localStorage.setItem(`bookmark-${bookmark.id}`, JSON.stringify(bookmark));
-  loadBookmarks();
+  loadBookmarks();  // Lade alle Bookmarks nach dem Setzen neu
 }
 
 // Bookmarks laden
