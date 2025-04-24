@@ -14,6 +14,20 @@ window.onload = async () => {
     showControls();
   }
 };
+// Beim Laden der Seite sofort einen gültigen Access Token holen
+getValidAccessToken().then(token => {
+  if (token) {
+    console.log('Initialer gültiger Token:', token);
+  } else {
+    console.warn('Kein gültiger Token gefunden.');
+  }
+});
+
+// Token automatisch alle 50 Minuten erneuern
+setInterval(() => {
+  console.log('Automatischer Token-Refresh...');
+  refreshAccessToken();
+}, 50 * 60 * 1000); // 50 Minuten in Millisekunden
  
 // Steuerung anzeigen
 function showControls() {
