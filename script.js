@@ -108,7 +108,7 @@ window.deleteBookmark = function (key) {
   loadBookmarks();
 }
 
-window.checkTokenValidity = async function () {
+/*window.checkTokenValidity = async function () {
   const res = await fetch('https://api.spotify.com/v1/me', {
     headers: { 'Authorization': `Bearer ${accessToken}` }
   });
@@ -121,7 +121,7 @@ window.checkTokenValidity = async function () {
   }
 
   return true;
-}
+}*/
 
 
 // Pause
