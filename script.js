@@ -86,8 +86,8 @@ window.loadBookmarks = function () {
     });
 }
 // Bookmark fortsetzen
-window.resumeBookmark = async function (uri, progress) {
-  console.log(`Versuche fortzusetzen mit URI: ${uri} und Position: ${progress}`);
+window.resumeBookmark = async function (track_uri, progress) {
+  console.log(`Versuche fortzusetzen mit URI: ${track_uri} und Position: ${progress}`);
   
   const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
@@ -96,7 +96,7 @@ window.resumeBookmark = async function (uri, progress) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      context_uri: uri,
+      context_uri: track_uri,
       position_ms: progress
     })
   });
@@ -111,7 +111,7 @@ window.resumeBookmark = async function (uri, progress) {
 
 
 // Bookmark löschen
-window.deleteBookmark = function (id) {
+window.deleteBookmark = function (album_id) {
   localStorage.removeItem(`bookmark-${album_id}`);
   loadBookmarks();
 }
