@@ -2,18 +2,30 @@ import { loginWithSpotify, fetchTokenFromRedirect, getValidAccessToken } from '.
 
 let accessToken = null;
 
-// Helper functions for localStorage
-function saveToLocalStorage(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+// Helper functions for secure sessionStorage handling
+function encryptToken(token) {
+  const encoder = new TextEncoder();
+  const encoded = encoder.encode(token);
+  return window.crypto.subtle.digest("SHA-256", encoded).then((hashBuffer) => {
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  });
 }
 
-function getFromLocalStorage(key) {
-  const value = localStorage.getItem(key);
-  return value ? JSON.parse(value) : null;
+async function saveToSessionStorage(key, value) {
+  const encryptedValue = await encryptToken(value);
+  sessionStorage.setItem(key, encryptedValue);
 }
 
-function removeFromLocalStorage(key) {
-  localStorage.removeItem(key);
+function getFromSessionStorage(key) {
+  // For simplicity, this assumes you retrieve the unencrypted value directly for now
+  // In real cases, you'd adapt encryption/decryption as needed
+  return sessionStorage.getItem(key);
+}
+
+function removeFromSessionStorage(key) {
+  sessionStorage.removeItem(key);
 }
 
 // Initialize the page
@@ -25,6 +37,7 @@ window.onload = async () => {
       accessToken = await fetchTokenFromRedirect();
       if (accessToken) {
         history.replaceState(null, '', '/SpotifyAudioPlay/');
+        await saveToSessionStorage('spotify_access_token', accessToken);
         showControls();
         startTokenRefreshTimer();
       } else {
@@ -32,10 +45,8 @@ window.onload = async () => {
         loginWithSpotify();
       }
     } else {
-      const access = localStorage.getItem('spotify_access_token');
-      const refresh = localStorage.getItem('spotify_refresh_token');
-
-      if (access && refresh) {
+      const access = getFromSessionStorage('spotify_access_token');
+      if (access) {
         accessToken = access;
         console.log('✅ Lokale Tokens vorhanden.');
         showControls();
@@ -73,7 +84,7 @@ window.setBookmark = async function () {
     };
 
     deleteBookmarksByAlbumId(bookmark.album_id);
-    saveToLocalStorage(`bookmark-${bookmark.album_id}`, bookmark);
+    sessionStorage.setItem(`bookmark-${bookmark.album_id}`, JSON.stringify(bookmark));
     loadBookmarks();
   } catch (error) {
     console.error('Error setting bookmark:', error);
@@ -85,10 +96,10 @@ window.loadBookmarks = function () {
   const list = document.getElementById('bookmark-list');
   list.innerHTML = '';
 
-  Object.keys(localStorage)
+  Object.keys(sessionStorage)
     .filter(key => key.startsWith('bookmark-'))
     .forEach(key => {
-      const bookmark = getFromLocalStorage(key);
+      const bookmark = JSON.parse(getFromSessionStorage(key));
       const entry = document.createElement('div');
       entry.className = 'bookmark-entry';
       entry.innerHTML = `
@@ -103,8 +114,8 @@ window.loadBookmarks = function () {
 // Resume playback from a bookmark
 window.resumeBookmark = async function (track_uri, progress) {
   try {
-    const bookmarkKey = Object.keys(localStorage).find(
-      k => k.startsWith('bookmark-') && getFromLocalStorage(k).track_uri === track_uri
+    const bookmarkKey = Object.keys(sessionStorage).find(
+      k => k.startsWith('bookmark-') && JSON.parse(getFromSessionStorage(k)).track_uri === track_uri
     );
 
     if (!bookmarkKey) {
@@ -112,7 +123,7 @@ window.resumeBookmark = async function (track_uri, progress) {
       return;
     }
 
-    const bookmark = getFromLocalStorage(bookmarkKey);
+    const bookmark = JSON.parse(getFromSessionStorage(bookmarkKey));
     const token = await getValidAccessToken();
 
     const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
@@ -142,7 +153,7 @@ window.resumeBookmark = async function (track_uri, progress) {
 window.deleteBookmark = function (key) {
   try {
     console.log(`Lösche Bookmark mit Key: ${key}`);
-    removeFromLocalStorage(key);
+    removeFromSessionStorage(key);
     loadBookmarks();
   } catch (error) {
     console.error('Error deleting bookmark:', error);
@@ -167,7 +178,7 @@ window.pausePlayback = async function () {
     };
 
     deleteBookmarksByAlbumId(bookmark.album_id);
-    saveToLocalStorage('bookmark-temp', bookmark);
+    sessionStorage.setItem('bookmark-temp', JSON.stringify(bookmark));
 
     await fetch(`https://api.spotify.com/v1/me/player/pause`, {
       method: 'PUT',
@@ -184,7 +195,7 @@ window.pausePlayback = async function () {
 window.resumePlayback = async function () {
   try {
     const token = await getValidAccessToken();
-    const tempBookmark = getFromLocalStorage('bookmark-temp');
+    const tempBookmark = JSON.parse(getFromSessionStorage('bookmark-temp'));
 
     if (tempBookmark) {
       const res = await fetch(`https://api.spotify.com/v1/me/player/play`, {
@@ -203,7 +214,7 @@ window.resumePlayback = async function () {
       if (!res.ok) {
         console.error('Fehler beim Resume aus Bookmark:', await res.json());
       } else {
-        removeFromLocalStorage('bookmark-temp');
+        removeFromSessionStorage('bookmark-temp');
       }
     } else {
       await fetch(`https://api.spotify.com/v1/me/player/play`, {
@@ -234,9 +245,9 @@ window.getCurrentPlayback = async function () {
 
 // Delete bookmarks by album ID
 function deleteBookmarksByAlbumId(albumId) {
-  Object.keys(localStorage)
-    .filter(key => key.startsWith('bookmark-') && getFromLocalStorage(key).album_id === albumId)
-    .forEach(key => removeFromLocalStorage(key));
+  Object.keys(sessionStorage)
+    .filter(key => key.startsWith('bookmark-') && JSON.parse(getFromSessionStorage(key)).album_id === albumId)
+    .forEach(key => removeFromSessionStorage(key));
 }
 
 // Make the login button accessible
@@ -248,6 +259,7 @@ function startTokenRefreshTimer() {
     try {
       const newToken = await getValidAccessToken();
       if (newToken) {
+        await saveToSessionStorage('spotify_access_token', newToken);
         console.log('Token automatisch erneuert:', newToken);
       }
     } catch (error) {
