@@ -80,7 +80,7 @@ window.loadBookmarks = function () {
       entry.innerHTML = `
         <strong>${bookmark.track_name}</strong> - ${bookmark.album_name}<br>
         <button onclick="resumeBookmark('${bookmark.track_uri}', ${bookmark.progress})">▶️ Fortsetzen</button>
-        <button onclick="deleteBookmark('${bookmark.album_id}')">🗑️ Löschen</button>
+        <button onclick="deleteBookmark('${key}')">🗑️ Löschen</button>
       `;
       list.appendChild(entry);
     });
@@ -103,13 +103,9 @@ window.resumeBookmark = async function (uri, progress) {
 
 
 // Bookmark löschen
-window.deleteBookmark = function (album_id) {
-  console.log('Alle Bookmark-Keys:');
-  Object.keys(localStorage).filter(k => k.startsWith('bookmark-')).forEach(k => console.log(k));
-  console.log(`Lösche Bookmark mit Key: bookmark-${bookmark.album_id}`);
-  localStorage.removeItem(`bookmark-${bookmark.album_id}`);
-  console.log(`Neu laden`);
-  
+window.deleteBookmark = function (key) {
+  console.log(`Lösche Bookmark mit Key: ${key}`);
+  localStorage.removeItem(key);
   loadBookmarks();
 }
 
