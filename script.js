@@ -80,7 +80,7 @@ window.loadBookmarks = function () {
       entry.innerHTML = `
         <strong>${bookmark.track_name}</strong> - ${bookmark.album_name}<br>
         <button onclick="resumeBookmark('${bookmark.track_uri}', ${bookmark.progress})">▶️ Fortsetzen</button>
-        <button onclick="deleteBookmark('${bookmark.track_id}')">🗑️ Löschen</button>
+        <button onclick="deleteBookmark('${bookmark.album_id}')">🗑️ Löschen</button>
       `;
       list.appendChild(entry);
     });
