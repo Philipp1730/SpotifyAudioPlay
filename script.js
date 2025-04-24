@@ -86,7 +86,7 @@ window.loadBookmarks = function () {
     });
 }
 // Bookmark fortsetzen
-window.resumeBookmark = async function (uri, progress) {
+/*window.resumeBookmark = async function (uri, progress) {
 
   const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
     method: 'PUT',
@@ -99,7 +99,38 @@ window.resumeBookmark = async function (uri, progress) {
       position_ms: progress
     })
   });
-}
+}*/
+window.resumeBookmark = async function (uri, progress) {
+  const albumId = uri.split(':')[2]; // Falls du die album_id nicht separat übergibst
+
+  const bookmark = Object.values(localStorage)
+    .map(val => JSON.parse(val))
+    .find(b => b.track_uri === uri);
+
+  if (!bookmark) {
+    console.error("Kein passender Bookmark gefunden");
+    return;
+  }
+
+  const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      context_uri: `spotify:album:${bookmark.album_id}`,
+      offset: {
+        uri: bookmark.track_uri
+      },
+      position_ms: bookmark.progress
+    })
+  });
+
+  if (!response.ok) {
+    console.error('Fehler beim Fortsetzen:', await response.json());
+  }
+};
 
 
 // Bookmark löschen
