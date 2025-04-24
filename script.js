@@ -106,6 +106,7 @@ window.resumeBookmark = async function (uri, progress) {
 window.deleteBookmark = function (key) {
   console.log(`Lösche Bookmark mit Key: ${key}`);
   localStorage.removeItem(key);
+  console.log(`Neu laden`);
   loadBookmarks();
 }
 
