@@ -16,7 +16,11 @@ window.onload = async () => {
     startTokenRefreshTimer();
   }
 };
-
+// Steuerung anzeigen
+function showControls() {
+  document.getElementById('login-container').style.display = 'none';
+  document.getElementById('controls').style.display = 'block';
+}
 // Bookmark setzen
 window.setBookmark = async function () {
   const playback = await getCurrentPlayback();
